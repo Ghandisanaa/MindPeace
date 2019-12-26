@@ -1,0 +1,479 @@
+
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+LiquidCrystal_I2C lcd(0x20,16,2);  // set the LCD address to 0x20 for a 16 chars and 2 line display
+#ifdef __AVR__
+#include <avr/power.h>
+#endif
+#define PIN 5
+#include <Adafruit_NeoPixel.h>
+#include <SoftwareSerial.h>  
+#define max_char 15
+char message[max_char];    // memorise le message
+#define max_txt 32
+char rappel[max_txt];    // memorise le rappel
+char l_char;               // lecture d'un caractère
+byte index = 0;            // indice va de 0 à 14
+int i;
+char type;
+#define PIN 5
+// Parameter 1 = number of pixels in strip
+// Parameter 2 = Arduino pin number (most are valid)
+// Parameter 3 = pixel type flags, add together as needed:
+//   NEO_KHZ800  800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
+//   NEO_KHZ400  400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
+//   NEO_GRB     Pixels are wired for GRB bitstream (most NeoPixel products)
+//   NEO_RGB     Pixels are wired for RGB bitstream (v1 FLORA pixels, not v2)
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(24, PIN, NEO_GRB + NEO_KHZ800);
+// IMPORTANT: To reduce NeoPixel burnout risk, add 1000 uF capacitor across
+// pixel power leads, add 300 - 500 Ohm resistor on first pixel's data input
+// and minimize distance between Arduino and first pixel.  Avoid connecting
+// on a live circuit...if you must, connect GND first.
+int btTx = 11;  // TX-O pin of bluetooth mate, RX Arduino D7
+int btRx = 10;  // RX-I pin of bluetooth mate, TX Arduino D8
+SoftwareSerial bt(11, 10); // (RX, TX) (pin Tx BT, pin Rx BT)
+//couleurs de la lumière 1
+int rougei = 255;     
+int verti = 50;   
+int bleui = 0;   
+//couleurs de la lumière 2
+int rougej = 50;     
+int vertj = 0;   
+int bleuj = 255; 
+//couleurs de la lumière 3
+int rougek = 0;     
+int vertk = 255;   
+int bleuk = 50; 
+// niveau de couleur de 0 à 255 (entier)
+int rougeValeur = 255;     
+int vertValeur = 255;   
+int bleuValeur = 255;   
+// lecture des messages de couleurs (chaine de caracteres)
+String TrougeValeur;     
+String TvertValeur;   
+String TbleuValeur;    
+int flag = 0;
+char couleur;  
+int wait=3000;
+int time=6000;
+
+void setup() {
+  Serial.begin(9600);
+  bt.begin(9600);  // démarrage du bluetooth à 9600 bauds
+  strip.begin(); // initialisation des neopixels
+  strip.show(); 
+  lcd.init();                      // initialize the lcd
+  // Print a message to the LCD.
+  lcd.backlight();
+  lcd.print("Hello, MindPeace!");  
+  strip.setPixelColor(0, strip.Color(0, 0, 255));
+  strip.show(); 
+  pinMode(8, OUTPUT); //Initialize 8 Pin as output. You can use any PWM Pin.
+}
+
+
+void loop() {
+     
+      strip.setPixelColor(0, strip.Color(rougei, verti,  bleui));
+      strip.show(); 
+      lcd.init();
+      lcd.backlight();
+      lcd.print("On t'aime, on est avec toi");
+      delay(wait);
+      strip.setPixelColor(0, strip.Color(rougej, vertj,  bleuj));
+      strip.show(); 
+      lcd.init();
+      lcd.backlight();
+      lcd.print("On pense à toi <3 <3");
+      delay(wait);
+      strip.setPixelColor(0, strip.Color(rougek, vertk,  bleuk));
+      strip.show(); 
+      lcd.init();
+       lcd.backlight();
+      lcd.print("Doudou va bien :) :)  <3 <3");
+      delay(wait);
+      tone(8, 293, 112.5);
+       delay(wait);
+  
+  //tant qu'il y a des données envoyées sur le BT 
+  while(bt.available() > 0){
+    
+    //le message peut avoir 15 caractères 
+    if (index==0) { type=bt.read();}
+    Serial.print("!!type="); 
+    Serial.println(type);
+    index++;
+    
+
+      if(type=='T'){
+         
+         while(bt.available() > 0){
+          flag = 0;
+          //le message peut avoir 32 caractères 
+          if(index < (max_txt)){ 
+            l_char = bt.read();
+          rappel[index-1] = l_char;
+         Serial.print("!!Rappel="); 
+         Serial.println(rappel); 
+          
+          index++;                     // changement de position
+          //rappel[index] = '\0';
+          }}
+        if(flag == 0){
+          Serial.print("Rappel complet ");
+          Serial.println(rappel);
+          lcd.init();
+          lcd.backlight();
+          lcd.print(rappel);
+          strip.setPixelColor(0, strip.Color(255, 0, 0));
+          strip.show(); 
+          delay(time);
+          lcd.init();
+          lcd.backlight();
+          tone(8, 293, 112.5);
+           delay(time);
+          flag=1;
+          for(i=0; i<31; i++){
+          rappel[i] = '\0';
+         } 
+          //remise à zéro de l'indice
+         index=0;
+         Serial.print("Rappel vide ");
+         Serial.println(rappel);
+         }
+    }
+    
+    if(type=='I'){
+       while(bt.available() > 0){
+        flag = 3;
+        if(index < (max_char)){         
+          l_char = bt.read();      // lecture d'un caractère
+          message[index-1] = l_char;     // tableau pour memoriser
+          //Serial.println(message);
+           if(l_char=='R'){
+            couleur = 'R';
+             TrougeValeur = "";  
+             Serial.print("!!R="); 
+             Serial.println(TrougeValeur); 
+            }
+          else if(l_char=='V'){
+             couleur = 'V';
+             TvertValeur = "";
+            Serial.print("!!V=");
+            Serial.println(TvertValeur); 
+           }
+         else if(l_char=='B'){
+           couleur = 'B';
+           TbleuValeur = "";
+            Serial.print("!!B=");
+            Serial.println(TbleuValeur);
+          }
+     
+         if(couleur == 'R' && l_char!='R'&&l_char!=';'){
+          TrougeValeur += l_char;
+           Serial.print("R=");
+           Serial.println(TrougeValeur);
+         }
+ 
+         else if(couleur == 'V' && l_char!='V'&& l_char!=';'){
+            TvertValeur += l_char;
+             Serial.print("V=");
+             Serial.println(TvertValeur);
+           }
+  
+        else if(couleur == 'B' && l_char!='B'&& l_char!=';'){
+           TbleuValeur += l_char;
+           TbleuValeur=TbleuValeur;
+           Serial.print("B=");
+           Serial.println(TbleuValeur);
+         }
+  
+       index++;                     // changement de position
+       message[index] = '\0';       // Delete the last position
+       }}
+  
+ if(flag == 3){
+
+        rougei=TrougeValeur.toInt();
+        verti=TvertValeur.toInt();
+        bleui=TbleuValeur.toInt();
+
+   Serial.print('R');
+   Serial.println(rougeValeur);
+   Serial.print('V');
+   Serial.println(vertValeur);
+   Serial.print('B');
+   Serial.println(bleuValeur);
+   Serial.print("MESSAGE ");
+   Serial.println(message);
+
+  
+   strip.setPixelColor(0, strip.Color(rougeValeur, vertValeur, bleuValeur));
+   strip.show(); 
+//colorWipe(strip.Color(0, 0, 0), 50);
+
+// fin de lecture de tout le message et donc réinitialisation, on attend une prochaine donnée
+   flag=1; 
+      for(i=0; i<15; i++){
+      message[i] = '\0';
+    } 
+    //remise à zéro de l'indice
+    index=0;  
+   Serial.print("MESSAGE normalement vide ");
+   Serial.println(message);
+ }
+ }
+   if(type=='K'){
+       while(bt.available() > 0){
+       flag = 5;
+       if(index < (max_char)){         
+      l_char = bt.read();      // lecture d'un caractère
+      message[index-1] = l_char;     // tableau pour memoriser
+      //Serial.println(message);
+      if(l_char=='R'){
+         couleur = 'R';
+         TrougeValeur = "";  
+         Serial.print("!!R="); 
+         Serial.println(TrougeValeur); 
+      }
+      else if(l_char=='V'){
+         couleur = 'V';
+         TvertValeur = "";
+         Serial.print("!!V=");
+         Serial.println(TvertValeur); 
+      }
+      else if(l_char=='B'){
+         couleur = 'B';
+         TbleuValeur = "";
+         Serial.print("!!B=");
+         Serial.println(TbleuValeur);
+      }
+     
+      if(couleur == 'R' && l_char!='R'&&l_char!=';'){
+         TrougeValeur += l_char;
+         Serial.print("R=");
+         Serial.println(TrougeValeur);
+      }
+ 
+      else if(couleur == 'V' && l_char!='V'&& l_char!=';'){
+         TvertValeur += l_char;
+         Serial.print("V=");
+         Serial.println(TvertValeur);
+         }
+
+      else if(couleur == 'B' && l_char!='B'&& l_char!=';'){
+         TbleuValeur += l_char;
+         TbleuValeur=TbleuValeur;
+         Serial.print("B=");
+         Serial.println(TbleuValeur);
+         }
+  
+      index++;                     // changement de position
+      message[index] = '\0';       // Delete the last position
+       }}
+   
+   
+ 
+
+   
+ if(flag == 5){
+
+        rougek=TrougeValeur.toInt();
+        vertk=TvertValeur.toInt();
+        bleuk=TbleuValeur.toInt();
+
+   Serial.print('R');
+   Serial.println(rougeValeur);
+   Serial.print('V');
+   Serial.println(vertValeur);
+   Serial.print('B');
+   Serial.println(bleuValeur);
+   Serial.print("MESSAGE ");
+   Serial.println(message);
+
+  
+   strip.setPixelColor(0, strip.Color(rougeValeur, vertValeur, bleuValeur));
+   strip.show(); 
+//colorWipe(strip.Color(0, 0, 0), 50);
+
+// fin de lecture de tout le message et donc réinitialisation, on attend une prochaine donnée
+   flag=1; 
+      for(i=0; i<15; i++){
+      message[i] = '\0';
+    } 
+    //remise à zéro de l'indice
+    index=0;  
+   Serial.print("MESSAGE normalement vide ");
+   Serial.println(message);
+ }
+ }
+   if(type=='J'){
+       while(bt.available() > 0){
+       flag = 4;
+       if(index < (max_char)){         
+      l_char = bt.read();      // lecture d'un caractère
+      message[index-1] = l_char;     // tableau pour memoriser
+      //Serial.println(message);
+      if(l_char=='R'){
+         couleur = 'R';
+         TrougeValeur = "";  
+         Serial.print("!!R="); 
+         Serial.println(TrougeValeur); 
+      }
+      else if(l_char=='V'){
+         couleur = 'V';
+         TvertValeur = "";
+         Serial.print("!!V=");
+         Serial.println(TvertValeur); 
+      }
+      else if(l_char=='B'){
+         couleur = 'B';
+         TbleuValeur = "";
+         Serial.print("!!B=");
+         Serial.println(TbleuValeur);
+      }
+     
+      if(couleur == 'R' && l_char!='R'&&l_char!=';'){
+         TrougeValeur += l_char;
+         Serial.print("R=");
+         Serial.println(TrougeValeur);
+      }
+ 
+      else if(couleur == 'V' && l_char!='V'&& l_char!=';'){
+         TvertValeur += l_char;
+         Serial.print("V=");
+         Serial.println(TvertValeur);
+         }
+
+      else if(couleur == 'B' && l_char!='B'&& l_char!=';'){
+         TbleuValeur += l_char;
+         TbleuValeur=TbleuValeur;
+         Serial.print("B=");
+         Serial.println(TbleuValeur);
+         }
+  
+      index++;                     // changement de position
+      message[index] = '\0';       // Delete the last position
+       }}
+   
+   
+ 
+
+   
+ if(flag == 4){
+
+        rougej=TrougeValeur.toInt();
+        vertj=TvertValeur.toInt();
+        bleuj=TbleuValeur.toInt();
+
+   Serial.print('R');
+   Serial.println(rougeValeur);
+   Serial.print('V');
+   Serial.println(vertValeur);
+   Serial.print('B');
+   Serial.println(bleuValeur);
+   Serial.print("MESSAGE ");
+   Serial.println(message);
+
+  
+   strip.setPixelColor(0, strip.Color(rougeValeur, vertValeur, bleuValeur));
+   strip.show(); 
+//colorWipe(strip.Color(0, 0, 0), 50);
+
+// fin de lecture de tout le message et donc réinitialisation, on attend une prochaine donnée
+   flag=1; 
+      for(i=0; i<15; i++){
+      message[i] = '\0';
+    } 
+    //remise à zéro de l'indice
+    index=0;  
+   Serial.print("MESSAGE normalement vide ");
+   Serial.println(message);
+ }
+ }
+     if(type=='C'){
+       while(bt.available() > 0){
+       flag = 2;
+       if(index < (max_char)){         
+      l_char = bt.read();      // lecture d'un caractère
+      message[index-1] = l_char;     // tableau pour memoriser
+      //Serial.println(message);
+      if(l_char=='R'){
+         couleur = 'R';
+         TrougeValeur = "";  
+         Serial.print("!!R="); 
+         Serial.println(TrougeValeur); 
+      }
+      else if(l_char=='V'){
+         couleur = 'V';
+         TvertValeur = "";
+         Serial.print("!!V=");
+         Serial.println(TvertValeur); 
+      }
+      else if(l_char=='B'){
+         couleur = 'B';
+         TbleuValeur = "";
+         Serial.print("!!B=");
+         Serial.println(TbleuValeur);
+      }
+     
+      if(couleur == 'R' && l_char!='R'&&l_char!=';'){
+         TrougeValeur += l_char;
+         Serial.print("R=");
+         Serial.println(TrougeValeur);
+      }
+ 
+      else if(couleur == 'V' && l_char!='V'&& l_char!=';'){
+         TvertValeur += l_char;
+         Serial.print("V=");
+         Serial.println(TvertValeur);
+         }
+
+      else if(couleur == 'B' && l_char!='B'&& l_char!=';'){
+         TbleuValeur += l_char;
+         TbleuValeur=TbleuValeur;
+         Serial.print("B=");
+         Serial.println(TbleuValeur);
+         }
+  
+      index++;                     // changement de position
+      message[index] = '\0';       // Delete the last position
+       }}
+   
+   
+ 
+
+   
+ if(flag == 2){
+
+        rougeValeur=TrougeValeur.toInt();
+        vertValeur=TvertValeur.toInt();
+        bleuValeur=TbleuValeur.toInt();
+
+   Serial.print('R');
+   Serial.println(rougeValeur);
+   Serial.print('V');
+   Serial.println(vertValeur);
+   Serial.print('B');
+   Serial.println(bleuValeur);
+   Serial.print("MESSAGE ");
+   Serial.println(message);
+
+  
+   strip.setPixelColor(0, strip.Color(rougeValeur, vertValeur, bleuValeur));
+   strip.show(); 
+//colorWipe(strip.Color(0, 0, 0), 50);
+
+// fin de lecture de tout le message et donc réinitialisation, on attend une prochaine donnée
+   flag=1; 
+      for(i=0; i<15; i++){
+      message[i] = '\0';
+    } 
+    //remise à zéro de l'indice
+    index=0;  
+   Serial.print("MESSAGE normalement vide ");
+   Serial.println(message);
+ }
+ }
+    }
+}
